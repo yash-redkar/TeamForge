@@ -9,6 +9,7 @@ import {
     updateSubTask,
     deleteSubTask,
     removeAttachment,
+    getKanbanBoard,
 } from "../controllers/task.controllers.js";
 
 import {
@@ -43,6 +44,13 @@ router
         validate,
         createTask,
     );
+
+// KANBAN BOARD (GET /tasks/board)
+router.get(
+  "/board",
+  validateProjectPermission(AvailableUserRole),
+  getKanbanBoard
+);
 
 // SINGLE TASK (GET/PUT/DELETE /tasks/:taskId)
 router
@@ -86,5 +94,6 @@ router
         updateSubTask,
     )
     .delete(validateProjectPermission([UserRolesEnum.ADMIN]), deleteSubTask);
+
 
 export default router;

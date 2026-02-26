@@ -394,6 +394,55 @@ const removeAttachment = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, null, "Attachment deleted successfully"));
 });
 
+const getKanbanBoard = asyncHandler(async (req, res) => {
+    const { workspaceId, projectId } = req.params;
+    const userId = req.user._id;
+
+    // Validate project
+    const project = await Project.findOne({
+        _id: projectId,
+        workspace: workspaceId,
+    });
+
+    if (!project)
+        throw new ApiError(404, "Project not found in this workspace");
+
+    await checkProjectMembership(userId, workspaceId, projectId);
+
+    const board = await Tasks.aggregate([
+        {
+            $match: {
+                workspace: new mongoose.Types.ObjectId(workspaceId),
+                project: new mongoose.Types.ObjectId(projectId),
+            },
+        },
+        {
+            $sort: { createdAt: -1 },
+        },
+        {
+            $group: {
+                _id: "$status",
+                tasks: { $push: "$$ROOT" },
+            },
+        },
+    ]);
+
+    // Convert array → object
+    const result = {
+        todo: [],
+        in_progress: [],
+        done: [],
+    };
+
+    board.forEach((column) => {
+        result[column._id] = column.tasks;
+    });
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, result, "Kanban board fetched"));
+});
+
 export {
     getTasks,
     createTask,
@@ -404,4 +453,5 @@ export {
     updateSubTask,
     deleteSubTask,
     removeAttachment,
+    getKanbanBoard,
 };
