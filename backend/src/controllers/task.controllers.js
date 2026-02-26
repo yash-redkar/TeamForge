@@ -61,29 +61,68 @@ const normalizeAssignedTo = (value) => {
 
 const getTasks = asyncHandler(async (req, res) => {
     const { workspaceId, projectId } = req.params;
+    const { status, assignedTo, mine, limit, cursor } = req.query;
     const userId = req.user._id;
 
     const project = await Project.findOne({
         _id: projectId,
         workspace: workspaceId,
     });
+
     if (!project)
         throw new ApiError(404, "Project not found in this workspace");
 
-    //check membership
     await checkProjectMembership(userId, workspaceId, projectId);
 
-    const tasks = await Tasks.find({
+    const pageSize = Math.min(parseInt(limit || "20", 10), 50);
+
+    const query = {
         workspace: workspaceId,
         project: projectId,
-    })
+    };
+
+    // Filter by status (Kanban column)
+    if (status) {
+        query.status = status;
+    }
+
+    // Filter assigned user
+    if (mine === "true") {
+        query.assignedTo = userId;
+    } else if (assignedTo) {
+        query.assignedTo = assignedTo;
+    }
+
+    // Cursor pagination
+    if (cursor) {
+        const cursorDate = new Date(cursor);
+        if (!isNaN(cursorDate.getTime())) {
+            query.createdAt = { $lt: cursorDate };
+        }
+    }
+
+    const tasks = await Tasks.find(query)
+        .sort({ createdAt: -1 })
+        .limit(pageSize)
         .populate("assignedTo", "username email avatar")
         .populate("assignedBy", "username email")
-        .sort({ createdAt: -1 });
+        .lean();
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, tasks, "Tasks fetched successfully"));
+    tasks.reverse();
+
+    const nextCursor = tasks.length ? tasks[0].createdAt.toISOString() : null;
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                items: tasks,
+                nextCursor,
+                limit: pageSize,
+            },
+            "Tasks fetched successfully",
+        ),
+    );
 });
 
 const createTask = asyncHandler(async (req, res) => {
