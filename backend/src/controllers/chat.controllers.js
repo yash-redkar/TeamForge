@@ -80,7 +80,6 @@ export const getConversationMessages = asyncHandler(async (req, res) => {
     const convo = await Conversation.findById(conversationId);
     if (!convo) throw new ApiError(404, "Conversation not found");
 
-    // Tenant isolation + auth: must be member based on convo type
     if (String(convo.type) === "project") {
         await ensureProjectAccess({
             userId: req.user._id,
@@ -88,7 +87,6 @@ export const getConversationMessages = asyncHandler(async (req, res) => {
             projectId: convo.project,
         });
     } else {
-        // later: workspace/task checks
         throw new ApiError(
             400,
             "Only project conversations supported right now",
@@ -100,7 +98,6 @@ export const getConversationMessages = asyncHandler(async (req, res) => {
         deletedAt: null,
     };
 
-    // cursor = createdAt timestamp ISO or messageId - we'll do createdAt ISO for simplicity
     if (cursor) {
         const cursorDate = new Date(cursor);
         if (!isNaN(cursorDate.getTime())) {
@@ -111,10 +108,13 @@ export const getConversationMessages = asyncHandler(async (req, res) => {
     const messages = await Message.find(query)
         .sort({ createdAt: -1 })
         .limit(pageSize)
-        .populate("sender", "username email");
+        .populate("sender", "username email avatar")
+        .lean();
+
+    messages.reverse();
 
     const nextCursor = messages.length
-        ? messages[messages.length - 1].createdAt.toISOString()
+        ? messages[0].createdAt.toISOString()
         : null;
 
     return res.status(200).json(
@@ -135,7 +135,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid conversationId");
     }
 
-    const convo = await Conversation.findById(conversationId);
+    const convo = await Conversation.findById(conversationId).lean();
     if (!convo) throw new ApiError(404, "Conversation not found");
 
     if (convo.type !== "project") {
@@ -161,10 +161,12 @@ export const sendMessage = asyncHandler(async (req, res) => {
         text: cleanText,
     });
 
-    const populated = await Message.findById(msg._id).populate(
+    const populated = await Message.findById(msg._id)
+    .populate(
         "sender",
-        "username email",
-    );
+        "username email avatar",
+    )
+    .lean();
 
     return res
         .status(201)
