@@ -1,5 +1,4 @@
 import { Server } from "socket.io";
-import cookie from "cookie";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
@@ -63,24 +62,11 @@ const ensureTaskAccess = async ({ userId, workspaceId, projectId, taskId }) => {
 };
 
 const getUserFromSocket = async (socket) => {
-    // 1) token from socket auth (easy dev testing)
     const authToken = socket.handshake.auth?.token;
-    if (authToken) {
-        const decoded = jwt.verify(authToken, process.env.ACCESS_TOKEN_SECRET);
-        const user = await User.findById(decoded._id).select(
-            "_id username email",
-        );
-        return user || null;
-    }
+    if (!authToken) return null;
 
-    // 2) fallback: cookie (browser later)
-    const rawCookie = socket.handshake.headers?.cookie || "";
-    const parsed = cookie.parse(rawCookie);
+    const decoded = jwt.verify(authToken, process.env.ACCESS_TOKEN_SECRET);
 
-    const token = parsed?.accessToken; // ✅ your cookie name
-    if (!token) return null;
-
-    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     const user = await User.findById(decoded._id).select("_id username email");
     return user || null;
 };
@@ -127,13 +113,39 @@ export const initSocket = (httpServer) => {
         }
     });
 
-    io.on("connection", (socket) => {
+    io.on("connection", (socket) => { 
         console.log(
             "✅ Socket connected:",
             socket.id,
             "user:",
             socket.user?.username,
         );
+
+        socket.on("join_project", async ({ workspaceId, projectId }) => {
+            try {
+                if (
+                    !mongoose.isValidObjectId(workspaceId) ||
+                    !mongoose.isValidObjectId(projectId)
+                ) {
+                    return socket.emit("error_event", {
+                        message: "Invalid workspaceId or projectId",
+                    });
+                }
+
+                await ensureProjectAccess({
+                    userId: socket.user._id,
+                    workspaceId,
+                    projectId,
+                });
+
+                socket.join(`project:${workspaceId}:${projectId}`);
+                socket.emit("joined_project", { workspaceId, projectId });
+            } catch (e) {
+                socket.emit("error_event", {
+                    message: e.message || "Join project failed",
+                });
+            }
+        });
 
         socket.on("join_conversation", async ({ conversationId }) => {
             console.log("➡️ join_conversation:", conversationId);
@@ -253,6 +265,10 @@ export const initSocket = (httpServer) => {
                     message: e.message || "Send failed",
                 });
             }
+        });
+
+        socket.on("disconnect", () => {
+            console.log("❌ Socket disconnected:", socket.id);
         });
     });
 

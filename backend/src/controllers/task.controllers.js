@@ -163,6 +163,9 @@ const createTask = asyncHandler(async (req, res) => {
         assignedBy: userId,
         attachments: req.uploadedFiles || [],
     });
+    // ✅ realtime emit
+    const io = req.app.get("io");
+    io?.to(`project:${workspaceId}:${pId}`).emit("task_created", task);
 
     return res
         .status(201)
@@ -238,6 +241,9 @@ const updateTask = asyncHandler(async (req, res) => {
 
     await task.save();
 
+    const io = req.app.get("io");
+    io?.to(`project:${workspaceId}:${projectId}`).emit("task_updated", task);
+
     return res
         .status(200)
         .json(new ApiResponse(200, task, "Task updated successfully"));
@@ -280,6 +286,11 @@ const deleteTask = asyncHandler(async (req, res) => {
     // Finally delete task
     await Tasks.findByIdAndDelete(taskId);
 
+    const io = req.app.get("io");
+    io?.to(`project:${workspaceId}:${projectId}`).emit("task_deleted", {
+        taskId,
+    });
+
     return res
         .status(200)
         .json(new ApiResponse(200, null, "Task deleted successfully"));
@@ -304,6 +315,9 @@ const createSubTask = asyncHandler(async (req, res) => {
         createdBy: userId,
         workspace: workspaceId,
     });
+
+    const io = req.app.get("io");
+    io?.to(`project:${workspaceId}:${projectId}`).emit("subtask_created", subtask);
 
     return res
         .status(201)
