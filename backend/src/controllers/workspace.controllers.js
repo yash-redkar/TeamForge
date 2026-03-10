@@ -5,6 +5,7 @@ import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { WorkspaceRolesEnum } from "../utils/constants.js";
+import { createActivityLog } from "../utils/activity-log.js";
 
 const slugify = (s = "") =>
     s
@@ -41,6 +42,18 @@ export const createWorkspace = asyncHandler(async (req, res) => {
 
         await session.commitTransaction();
         session.endSession();
+
+        await createActivityLog({
+            workspace: workspace._id,
+            actor: req.user._id,
+            entityType: "workspace",
+            action: "workspace_created",
+            message: `Workspace "${workspace.name}" was created`,
+            meta: {
+                workspaceName: workspace.name,
+                workspaceSlug: workspace.slug,
+            },
+        });
 
         return res
             .status(201)
@@ -121,6 +134,18 @@ export const leaveWorkspace = asyncHandler(async (req, res) => {
 
     await WorkspaceMember.deleteOne({ _id: membership._id });
 
+    await createActivityLog({
+        workspace: workspaceId,
+        actor: req.user._id,
+        entityType: "member",
+        action: "workspace_left",
+        message: `${req.user.email} left the workspace`,
+        meta: {
+            userId: req.user._id,
+            previousRole: membership.role,
+        },
+    });
+
     return res
         .status(200)
         .json(
@@ -196,6 +221,18 @@ export const transferWorkspaceOwnership = asyncHandler(async (req, res) => {
 
         await session.commitTransaction();
         session.endSession();
+
+        await createActivityLog({
+            workspace: workspaceId,
+            actor: req.user._id,
+            entityType: "workspace",
+            action: "workspace_ownership_transferred",
+            message: `Workspace ownership transferred to ${targetMember.user.email}`,
+            meta: {
+                previousOwnerId: req.user._id,
+                newOwnerId: targetMember.user._id,
+            },
+        });
 
         return res.status(200).json(
             new ApiResponse(

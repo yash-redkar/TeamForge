@@ -6,6 +6,7 @@ import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import mongoose from "mongoose";
 import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
+import { createActivityLog } from "../utils/activity-log.js";
 
 // ✅ helper: ensure project belongs to workspace
 const getWorkspaceProjectOrThrow = async (workspaceId, projectId) => {
@@ -133,6 +134,18 @@ const createProject = asyncHandler(async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
+        await createActivityLog({
+            workspace: workspaceId,
+            project: project._id,
+            actor: req.user._id,
+            entityType: "project",
+            action: "project_created",
+            message: `Project "${project.name}" was created`,
+            meta: {
+                projectName: project.name,
+            },
+        });
+
         return res
             .status(201)
             .json(
@@ -180,6 +193,18 @@ const updateProject = asyncHandler(async (req, res) => {
 
     if (!project) throw new ApiError(404, "Project not found");
 
+    await createActivityLog({
+        workspace: workspaceId,
+        project: projectId,
+        actor: req.user._id,
+        entityType: "project",
+        action: "project_updated",
+        message: `Project "${project.name}" was updated`,
+        meta: {
+            projectName: project.name,
+        },
+    });
+
     return res
         .status(200)
         .json(new ApiResponse(200, project, "Project updated successfully"));
@@ -221,6 +246,18 @@ const deleteProject = asyncHandler(async (req, res) => {
 
         await session.commitTransaction();
         session.endSession();
+
+        await createActivityLog({
+            workspace: workspaceId,
+            project: projectId,
+            actor: req.user._id,
+            entityType: "project",
+            action: "project_deleted",
+            message: `Project "${project.name}" was deleted`,
+            meta: {
+                projectName: project.name,
+            },
+        });
 
         return res
             .status(200)
@@ -395,6 +432,20 @@ const updateMemberRole = asyncHandler(async (req, res) => {
         { new: true },
     );
 
+    await createActivityLog({
+        workspace: workspaceId,
+        project: projectId,
+        actor: req.user._id,
+        entityType: "member",
+        action: "project_member_role_updated",
+        message: `Updated member role from ${oldRole} to ${role}`,
+        meta: {
+            targetUserId: userId,
+            oldRole,
+            newRole: role,
+        },
+    });
+
     return res
         .status(200)
         .json(
@@ -485,6 +536,19 @@ const leaveProject = asyncHandler(async (req, res) => {
     }
 
     await ProjectMember.deleteOne({ _id: membership._id });
+
+    await createActivityLog({
+        workspace: membership.workspace,
+        project: membership.project,
+        actor: req.user._id,
+        entityType: "member",
+        action: "project_left",
+        message: `${req.user.email} left the project`,
+        meta: {
+            userId: req.user._id,
+            previousRole: membership.role,
+        },
+    });
 
     return res
         .status(200)

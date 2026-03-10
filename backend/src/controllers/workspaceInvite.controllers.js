@@ -8,6 +8,7 @@ import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { sendEmail, workspaceInviteMailgenContent } from "../utils/mail.js";
 import { WorkspaceRolesEnum } from "../utils/constants.js";
+import { createActivityLog } from "../utils/activity-log.js";
 
 const makeInviteToken = () => {
     const unHashedToken = crypto.randomBytes(32).toString("hex");
@@ -76,6 +77,19 @@ export const inviteToWorkspace = asyncHandler(async (req, res) => {
         ),
     });
 
+    await createActivityLog({
+        workspace: workspaceId,
+        actor: req.user._id,
+        entityType: "invite",
+        action: "workspace_invite_sent",
+        message: `Invited ${invitedUser.email} to workspace "${workspace.name}"`,
+        meta: {
+            invitedUserId: invitedUser._id,
+            invitedEmail: invitedUser.email,
+            role: role || WorkspaceRolesEnum.MEMBER,
+        },
+    });
+
     return res
         .status(200)
         .json(
@@ -110,6 +124,18 @@ export const acceptWorkspaceInvite = asyncHandler(async (req, res) => {
     member.inviteTokenHash = null;
     member.inviteExpiresAt = null;
     await member.save({ validateBeforeSave: false });
+
+    await createActivityLog({
+        workspace: member.workspace,
+        actor: req.user._id,
+        entityType: "invite",
+        action: "workspace_invite_accepted",
+        message: `${req.user.email} accepted a workspace invite`,
+        meta: {
+            userId: req.user._id,
+            workspaceMemberId: member._id,
+        },
+    });
 
     return res
         .status(200)
@@ -156,6 +182,18 @@ export const cancelWorkspaceInvite = asyncHandler(async (req, res) => {
     }
 
     await WorkspaceMember.deleteOne({ _id: invitedMember._id });
+
+    await createActivityLog({
+        workspace: workspaceId,
+        actor: req.user._id,
+        entityType: "invite",
+        action: "workspace_invite_cancelled",
+        message: `Cancelled a workspace invite`,
+        meta: {
+            workspaceMemberId: invitedMember._id,
+            invitedUserId: invitedMember.user,
+        },
+    });
 
     return res
         .status(200)
@@ -213,6 +251,19 @@ export const resendWorkspaceInvite = asyncHandler(async (req, res) => {
         ),
     });
 
+    await createActivityLog({
+        workspace: workspaceId,
+        actor: req.user._id,
+        entityType: "invite",
+        action: "workspace_invite_resent",
+        message: `Resent workspace invite to ${invitedMember.user.email}`,
+        meta: {
+            workspaceMemberId: invitedMember._id,
+            invitedUserId: invitedMember.user._id,
+            invitedEmail: invitedMember.user.email,
+        },
+    });
+
     return res
         .status(200)
         .json(
@@ -229,6 +280,17 @@ export const cleanupExpiredWorkspaceInvites = asyncHandler(async (req, res) => {
         workspace: workspaceId,
         status: "invited",
         inviteExpiresAt: { $lt: new Date() },
+    });
+
+    await createActivityLog({
+        workspace: workspaceId,
+        actor: req.user._id,
+        entityType: "invite",
+        action: "workspace_expired_invites_cleaned",
+        message: `Cleaned up ${result.deletedCount} expired workspace invites`,
+        meta: {
+            deletedCount: result.deletedCount,
+        },
     });
 
     return res

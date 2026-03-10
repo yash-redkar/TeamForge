@@ -11,6 +11,7 @@ import { asyncHandler } from "../utils/async-handler.js";
 
 import { sendEmail, projectInviteMailgenContent } from "../utils/mail.js";
 import { UserRolesEnum } from "../utils/constants.js";
+import { createActivityLog } from "../utils/activity-log.js";
 
 const makeInviteToken = () => {
     const unHashedToken = crypto.randomBytes(32).toString("hex");
@@ -63,6 +64,7 @@ export const inviteToProject = asyncHandler(async (req, res) => {
     const { unHashedToken, hashedToken, expiresAt } = makeInviteToken();
 
     const member = await ProjectMember.create({
+        workspace: project.workspace,
         project: projectId,
         user: invitedUser._id,
         role: role || "member",
@@ -82,6 +84,20 @@ export const inviteToProject = asyncHandler(async (req, res) => {
             project.name,
             acceptUrl,
         ),
+    });
+
+    await createActivityLog({
+        workspace: project.workspace,
+        project: project._id,
+        actor: req.user._id,
+        entityType: "invite",
+        action: "project_invite_sent",
+        message: `Invited ${invitedUser.email} to project "${project.name}"`,
+        meta: {
+            invitedUserId: invitedUser._id,
+            invitedEmail: invitedUser.email,
+            role: role || "member",
+        },
     });
 
     return res
@@ -119,6 +135,19 @@ export const acceptProjectInvite = asyncHandler(async (req, res) => {
     member.inviteExpiresAt = null;
 
     await member.save({ validateBeforeSave: false });
+
+    await createActivityLog({
+        workspace: member.workspace,
+        project: member.project,
+        actor: req.user._id,
+        entityType: "invite",
+        action: "project_invite_accepted",
+        message: `${req.user.email} accepted a project invite`,
+        meta: {
+            userId: req.user._id,
+            projectMemberId: member._id,
+        },
+    });
 
     return res
         .status(200)
@@ -165,6 +194,19 @@ export const cancelProjectInvite = asyncHandler(async (req, res) => {
     }
 
     await ProjectMember.deleteOne({ _id: invitedMember._id });
+
+    await createActivityLog({
+        workspace: invitedMember.workspace,
+        project: invitedMember.project,
+        actor: req.user._id,
+        entityType: "invite",
+        action: "project_invite_cancelled",
+        message: `Cancelled a project invite`,
+        meta: {
+            projectMemberId: invitedMember._id,
+            invitedUserId: invitedMember.user,
+        },
+    });
 
     return res
         .status(200)
@@ -218,6 +260,20 @@ export const resendProjectInvite = asyncHandler(async (req, res) => {
         ),
     });
 
+    await createActivityLog({
+        workspace: invitedMember.workspace,
+        project: invitedMember.project,
+        actor: req.user._id,
+        entityType: "invite",
+        action: "project_invite_resent",
+        message: `Resent project invite to ${invitedMember.user.email}`,
+        meta: {
+            projectMemberId: invitedMember._id,
+            invitedUserId: invitedMember.user._id,
+            invitedEmail: invitedMember.user.email,
+        },
+    });
+
     return res
         .status(200)
         .json(new ApiResponse(200, null, "Project invite resent successfully"));
@@ -232,6 +288,20 @@ export const cleanupExpiredProjectInvites = asyncHandler(async (req, res) => {
         project: projectId,
         status: "invited",
         inviteExpiresAt: { $lt: new Date() },
+    });
+
+    const project = await Project.findById(projectId);
+
+    await createActivityLog({
+        workspace: project.workspace,
+        project: projectId,
+        actor: req.user._id,
+        entityType: "invite",
+        action: "project_expired_invites_cleaned",
+        message: `Cleaned up ${result.deletedCount} expired project invites`,
+        meta: {
+            deletedCount: result.deletedCount,
+        },
     });
 
     return res

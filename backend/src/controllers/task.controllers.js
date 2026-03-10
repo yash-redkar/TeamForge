@@ -167,6 +167,19 @@ const createTask = asyncHandler(async (req, res) => {
     const io = req.app.get("io");
     io?.to(`project:${workspaceId}:${pId}`).emit("task_created", task);
 
+    await createActivityLog({
+        workspace: workspaceId,
+        project: projectId,
+        task: task._id,
+        actor: req.user._id,
+        entityType: "task",
+        action: "task_created",
+        message: `Task "${task.title}" was created`,
+        meta: {
+            taskTitle: task.title,
+        },
+    });
+
     return res
         .status(201)
         .json(new ApiResponse(201, task, "Task created successfully"));
