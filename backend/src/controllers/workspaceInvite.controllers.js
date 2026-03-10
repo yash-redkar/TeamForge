@@ -9,6 +9,7 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { sendEmail, workspaceInviteMailgenContent } from "../utils/mail.js";
 import { WorkspaceRolesEnum } from "../utils/constants.js";
 import { createActivityLog } from "../utils/activity-log.js";
+import { createNotification } from "../utils/notification.js";
 
 const makeInviteToken = () => {
     const unHashedToken = crypto.randomBytes(32).toString("hex");
@@ -75,6 +76,18 @@ export const inviteToWorkspace = asyncHandler(async (req, res) => {
             workspace.name,
             acceptUrl,
         ),
+    });
+
+    await createNotification({
+        user: invitedUser._id,
+        workspace: workspaceId,
+        type: "workspace_invite",
+        message: `You were invited to workspace "${workspace.name}"`,
+        meta: {
+            invitedBy: req.user._id,
+            invitedByEmail: req.user.email,
+            role: role || WorkspaceRolesEnum.MEMBER,
+        },
     });
 
     await createActivityLog({

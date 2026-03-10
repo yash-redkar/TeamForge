@@ -57,6 +57,7 @@ import chatRoutes from "./routes/chat.routes.js";
 import workspaceInviteRoutes from "./routes/workspaceInvite.routes.js";
 import projectInviteRoutes from "./routes/projectInvite.routes.js";
 import activityRoutes from "./routes/activity.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
@@ -70,6 +71,7 @@ app.use("/api/v1/chat", chatRoutes);
 app.use("/api/v1", workspaceInviteRoutes);
 app.use("/api/v1", projectInviteRoutes);
 app.use("/api/v1", activityRoutes);
+app.use("/api/v1", notificationRoutes);
 
 app.get("/", (req, res) => {
     res.send("Welcome to basecampy");

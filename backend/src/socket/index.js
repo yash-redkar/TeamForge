@@ -10,6 +10,8 @@ import { ProjectMember } from "../models/projectmember.models.js";
 import { WorkspaceMember } from "../models/workspacemember.models.js";
 import { Tasks } from "../models/task.models.js";
 
+let ioInstance = null;
+
 const ensureProjectAccess = async ({ userId, workspaceId, projectId }) => {
     const project = await Project.findOne({
         _id: projectId,
@@ -66,7 +68,6 @@ const getUserFromSocket = async (socket) => {
     if (!authToken) return null;
 
     const decoded = jwt.verify(authToken, process.env.ACCESS_TOKEN_SECRET);
-
     const user = await User.findById(decoded._id).select("_id username email");
     return user || null;
 };
@@ -74,16 +75,16 @@ const getUserFromSocket = async (socket) => {
 export const initSocket = (httpServer) => {
     const allowedOrigins = process.env.CORS_ORIGIN?.split(",") || [];
 
-    const io = new Server(httpServer, {
+    ioInstance = new Server(httpServer, {
         cors: {
             origin: (origin, cb) => {
-                // Allow undefined origin only in dev (Node test client)
-                if (!origin && process.env.NODE_ENV !== "production")
+                if (!origin && process.env.NODE_ENV !== "production") {
                     return cb(null, true);
+                }
 
-                // Allow only whitelisted origins (browser)
-                if (origin && allowedOrigins.includes(origin))
+                if (origin && allowedOrigins.includes(origin)) {
                     return cb(null, true);
+                }
 
                 return cb(new Error("Not allowed by CORS"), false);
             },
@@ -91,8 +92,7 @@ export const initSocket = (httpServer) => {
         },
     });
 
-    // Auth middleware
-    io.use(async (socket, next) => {
+    ioInstance.use(async (socket, next) => {
         try {
             const user = await getUserFromSocket(socket);
 
@@ -113,13 +113,17 @@ export const initSocket = (httpServer) => {
         }
     });
 
-    io.on("connection", (socket) => { 
+    ioInstance.on("connection", (socket) => {
         console.log(
             "✅ Socket connected:",
             socket.id,
             "user:",
             socket.user?.username,
         );
+
+        // personal room for realtime notifications
+        socket.join(socket.user._id.toString());
+        console.log("🔔 Joined personal room:", socket.user._id.toString());
 
         socket.on("join_project", async ({ workspaceId, projectId }) => {
             try {
@@ -175,14 +179,14 @@ export const initSocket = (httpServer) => {
                         userId: socket.user._id,
                         workspaceId: convo.workspace,
                     });
-                }else if (convo.type === "task") {
+                } else if (convo.type === "task") {
                     await ensureTaskAccess({
                         userId: socket.user._id,
                         workspaceId: convo.workspace,
                         projectId: convo.project,
                         taskId: convo.task,
                     });
-                }else {
+                } else {
                     return socket.emit("error_event", {
                         message: "Unsupported conversation type",
                     });
@@ -225,14 +229,14 @@ export const initSocket = (httpServer) => {
                         userId: socket.user._id,
                         workspaceId: convo.workspace,
                     });
-                }else if (convo.type === "task") {
+                } else if (convo.type === "task") {
                     await ensureTaskAccess({
                         userId: socket.user._id,
                         workspaceId: convo.workspace,
                         projectId: convo.project,
                         taskId: convo.task,
                     });
-                }else {
+                } else {
                     return socket.emit("error_event", {
                         message: "Unsupported conversation type",
                     });
@@ -256,10 +260,10 @@ export const initSocket = (httpServer) => {
                     "sender",
                     "username email",
                 );
-                io.to(`conversation:${convo._id}`).emit(
-                    "message_created",
-                    populated,
-                );
+
+                ioInstance
+                    .to(`conversation:${convo._id}`)
+                    .emit("message_created", populated);
             } catch (e) {
                 socket.emit("error_event", {
                     message: e.message || "Send failed",
@@ -272,5 +276,12 @@ export const initSocket = (httpServer) => {
         });
     });
 
-    return io;
+    return ioInstance;
+};
+
+export const getIO = () => {
+    if (!ioInstance) {
+        throw new Error("Socket.IO is not initialized");
+    }
+    return ioInstance;
 };

@@ -86,6 +86,19 @@ export const inviteToProject = asyncHandler(async (req, res) => {
         ),
     });
 
+    await createNotification({
+        user: invitedUser._id,
+        workspace: project.workspace,
+        project: project._id,
+        type: "project_invite",
+        message: `You were invited to project "${project.name}"`,
+        meta: {
+            invitedBy: req.user._id,
+            invitedByEmail: req.user.email,
+            role: role || "member",
+        },
+    });
+
     await createActivityLog({
         workspace: project.workspace,
         project: project._id,
