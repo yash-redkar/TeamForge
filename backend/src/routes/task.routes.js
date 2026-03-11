@@ -28,6 +28,7 @@ import {
     createSubTaskValidator,
     updateSubTaskValidator,
 } from "../validators/index.js";
+import taskCommentRoutes from "./taskcomment.routes.js";
 
 const router = Router({ mergeParams: true });
 router.use(verifyJWT);
@@ -94,6 +95,12 @@ router
         updateSubTask,
     )
     .delete(validateProjectPermission([UserRolesEnum.ADMIN]), deleteSubTask);
+
+router.use(
+    "/:taskId/comments",
+    validateProjectPermission(AvailableUserRole),
+    taskCommentRoutes,
+);
 
 
 export default router;

@@ -12,6 +12,7 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { sendEmail, projectInviteMailgenContent } from "../utils/mail.js";
 import { UserRolesEnum } from "../utils/constants.js";
 import { createActivityLog } from "../utils/activity-log.js";
+import { createNotification } from "../utils/notification.js";
 
 const makeInviteToken = () => {
     const unHashedToken = crypto.randomBytes(32).toString("hex");

@@ -9,6 +9,8 @@ import { asyncHandler } from "../utils/async-handler.js";
 import mongoose from "mongoose";
 import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
 import { v2 as cloudinary } from "cloudinary";
+import { createNotification } from "../utils/notification.js";
+import { createActivityLog } from "../utils/activity-log.js";
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -163,13 +165,30 @@ const createTask = asyncHandler(async (req, res) => {
         assignedBy: userId,
         attachments: req.uploadedFiles || [],
     });
+
+    if (task.assignedTo) {
+        await createNotification({
+            user: task.assignedTo,
+            workspace: task.workspace,
+            project: task.project,
+            task: task._id,
+            type: "task_assigned",
+            message: `You were assigned to task "${task.title}"`,
+            meta: {
+                assignedBy: req.user._id,
+                taskId: task._id,
+                taskTitle: task.title,
+            },
+        });
+    }
+
     // ✅ realtime emit
     const io = req.app.get("io");
     io?.to(`project:${workspaceId}:${pId}`).emit("task_created", task);
 
     await createActivityLog({
         workspace: workspaceId,
-        project: projectId,
+        project: pId,
         task: task._id,
         actor: req.user._id,
         entityType: "task",
@@ -218,10 +237,19 @@ const updateTask = asyncHandler(async (req, res) => {
     // Check membership
     await checkProjectMembership(userId, workspaceId, projectId);
 
-    const task = await Tasks.findOne({ _id: taskId, project: projectId, workspace: workspaceId });
+    const task = await Tasks.findOne({
+        _id: taskId,
+        project: projectId,
+        workspace: workspaceId,
+    });
+
     if (!task) {
         throw new ApiError(404, "Task not found");
     }
+
+    // store old values before update
+    const oldAssignedTo = task.assignedTo ? task.assignedTo.toString() : null;
+    const oldStatus = task.status;
 
     if (title) task.title = title;
     if (description) task.description = description;
@@ -256,6 +284,56 @@ const updateTask = asyncHandler(async (req, res) => {
 
     const io = req.app.get("io");
     io?.to(`project:${workspaceId}:${projectId}`).emit("task_updated", task);
+
+    // assignment notification + activity log
+    const newAssignedTo = task.assignedTo ? task.assignedTo.toString() : null;
+
+    if (newAssignedTo && newAssignedTo !== oldAssignedTo) {
+        await createNotification({
+            user: task.assignedTo,
+            workspace: task.workspace,
+            project: task.project,
+            task: task._id,
+            type: "task_assigned",
+            message: `You were assigned to task "${task.title}"`,
+            meta: {
+                assignedBy: req.user._id,
+                taskId: task._id,
+                taskTitle: task.title,
+            },
+        });
+
+        await createActivityLog({
+            workspace: task.workspace,
+            project: task.project,
+            task: task._id,
+            actor: req.user._id,
+            entityType: "task",
+            action: "task_assigned",
+            message: `Task "${task.title}" was assigned`,
+            meta: {
+                assignedTo: task.assignedTo,
+                previousAssignedTo: oldAssignedTo,
+            },
+        });
+    }
+
+    // status change activity log
+    if (status && oldStatus !== task.status) {
+        await createActivityLog({
+            workspace: task.workspace,
+            project: task.project,
+            task: task._id,
+            actor: req.user._id,
+            entityType: "task",
+            action: "task_status_changed",
+            message: `Task "${task.title}" status changed from ${oldStatus} to ${task.status}`,
+            meta: {
+                oldStatus,
+                newStatus: task.status,
+            },
+        });
+    }
 
     return res
         .status(200)
@@ -304,6 +382,19 @@ const deleteTask = asyncHandler(async (req, res) => {
         taskId,
     });
 
+    await createActivityLog({
+        workspace: task.workspace,
+        project: task.project,
+        task: task._id,
+        actor: req.user._id,
+        entityType: "task",
+        action: "task_deleted",
+        message: `Task "${task.title}" was deleted`,
+        meta: {
+            taskTitle: task.title,
+        },
+    });
+
     return res
         .status(200)
         .json(new ApiResponse(200, null, "Task deleted successfully"));
@@ -331,6 +422,20 @@ const createSubTask = asyncHandler(async (req, res) => {
 
     const io = req.app.get("io");
     io?.to(`project:${workspaceId}:${projectId}`).emit("subtask_created", subtask);
+
+    await createActivityLog({
+        workspace: workspaceId,
+        project: projectId,
+        task: taskId,
+        actor: req.user._id,
+        entityType: "task",
+        action: "subtask_created",
+        message: `Subtask "${subtask.title}" was created`,
+        meta: {
+            subtaskId: subtask._id,
+            subtaskTitle: subtask.title,
+        },
+    });
 
     return res
         .status(201)
@@ -360,6 +465,21 @@ const updateSubTask = asyncHandler(async (req, res) => {
 
     await subtask.save();
 
+    await createActivityLog({
+        workspace: workspaceId,
+        project: projectId,
+        task: taskId,
+        actor: req.user._id,
+        entityType: "task",
+        action: "subtask_updated",
+        message: `Subtask "${subtask.title}" was updated`,
+        meta: {
+            subtaskId: subtask._id,
+            subtaskTitle: subtask.title,
+            isCompleted: subtask.isCompleted,
+        },
+    });
+
     return res
         .status(200)
         .json(new ApiResponse(200, subtask, "Subtask updated successfully"));
@@ -386,6 +506,20 @@ const deleteSubTask = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Subtask not found");
     }
 
+    await createActivityLog({
+        workspace: workspaceId,
+        project: projectId,
+        task: taskId,
+        actor: req.user._id,
+        entityType: "task",
+        action: "subtask_deleted",
+        message: `Subtask "${subtask.title}" was deleted`,
+        meta: {
+            subtaskId: subtask._id,
+            subtaskTitle: subtask.title,
+        },
+    });
+
     return res
         .status(200)
         .json(new ApiResponse(200, null, "Subtask deleted successfully"));
@@ -409,12 +543,32 @@ const removeAttachment = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Attachment not found");
     }
 
+    const attachmentInfo = {
+        attachmentId: attachment._id,
+        url: attachment.url,
+        public_id: attachment.public_id,
+    };
+
     // Delete from Cloudinary
     await deleteFromCloudinary(attachment.public_id);
 
     // Remove from task
     task.attachments.id(attachmentId).deleteOne();
     await task.save();
+
+    await createActivityLog({
+        workspace: workspaceId,
+        project: projectId,
+        task: taskId,
+        actor: req.user._id,
+        entityType: "task",
+        action: "attachment_removed",
+        message: `An attachment was removed from task "${task.title}"`,
+        meta: {
+            ...attachmentInfo,
+            taskTitle: task.title,
+        },
+    });
 
     return res
         .status(200)

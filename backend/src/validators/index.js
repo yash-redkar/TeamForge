@@ -224,6 +224,52 @@ const updateSubTaskValidator = () => {
     ];
 };
 
+const createTaskCommentValidator = () => {
+    return [
+        body("content")
+            .trim()
+            .notEmpty()
+            .withMessage("Comment content is required")
+            .isLength({ min: 1, max: 2000 })
+            .withMessage(
+                "Comment content must be between 1 and 2000 characters long",
+            ),
+
+        body("mentions")
+            .optional()
+            .isArray()
+            .withMessage("Mentions must be an array"),
+
+        body("mentions.*")
+            .optional()
+            .isMongoId()
+            .withMessage("Each mentioned user must be a valid user id"),
+    ];
+};
+
+const updateTaskCommentValidator = () => {
+    return [
+        body("content")
+            .trim()
+            .notEmpty()
+            .withMessage("Comment content is required")
+            .isLength({ min: 1, max: 2000 })
+            .withMessage(
+                "Comment content must be between 1 and 2000 characters long",
+            ),
+
+        body("mentions")
+            .optional()
+            .isArray()
+            .withMessage("Mentions must be an array"),
+
+        body("mentions.*")
+            .optional()
+            .isMongoId()
+            .withMessage("Each mentioned user must be a valid user id"),
+    ];
+};
+
 export {
     userRegisterValidator,
     userLoginValidator,
@@ -236,4 +282,6 @@ export {
     updateTaskValidator,
     createSubTaskValidator,
     updateSubTaskValidator,
+    createTaskCommentValidator,
+    updateTaskCommentValidator,
 };
