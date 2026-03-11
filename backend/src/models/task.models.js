@@ -49,7 +49,9 @@ const taskSchema = new Schema(
             default: [],
         },
     },
-    { timestamps: true },
+    { timestamps: true,
+        versionKey: false
+     },
 );
 
 // list tasks in project

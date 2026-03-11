@@ -31,7 +31,9 @@ const projectSchema = new Schema(
             index: true,
         },
     },
-    { timestamps: true },
+    { timestamps: true,
+        versionKey: false
+     },
 );
 
 // Ensure that project names are unique within the same workspace

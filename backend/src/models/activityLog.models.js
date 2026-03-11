@@ -45,7 +45,9 @@ const activityLogSchema = new mongoose.Schema(
             default: {},
         },
     },
-    { timestamps: true },
+    { timestamps: true,
+        versionKey: false
+     },
 );
 
 export const ActivityLog = mongoose.model("ActivityLog", activityLogSchema);

@@ -45,7 +45,9 @@ const notificationSchema = new mongoose.Schema(
             default: {},
         },
     },
-    { timestamps: true },
+    { timestamps: true,
+        versionKey: false
+     },
 );
 
 notificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });

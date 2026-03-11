@@ -47,7 +47,9 @@ const projectMemberSchema = new Schema(
         inviteTokenHash: { type: String, default: null, index: true },
         inviteExpiresAt: { type: Date, default: null },
     },
-    { timestamps: true },
+    { timestamps: true,
+        versionKey: false
+    },
 );
 
 projectMemberSchema.index({ project: 1, user: 1 }, { unique: true });

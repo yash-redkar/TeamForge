@@ -39,7 +39,9 @@ const workspaceMemberSchema = new Schema(
         inviteTokenHash: { type: String, default: null, index: true },
         inviteExpiresAt: { type: Date, default: null },
     },
-    { timestamps: true },
+    { timestamps: true,
+        versionKey: false
+     },
 );
 
 // ✅ one user only once in a workspace

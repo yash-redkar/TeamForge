@@ -6,6 +6,8 @@ import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { WorkspaceRolesEnum } from "../utils/constants.js";
 import { createActivityLog } from "../utils/activity-log.js";
+import { ProjectMember } from "../models/projectmember.models.js";
+import { Tasks } from "../models/task.models.js";
 
 const slugify = (s = "") =>
     s
@@ -114,10 +116,11 @@ export const getMyWorkspaces = asyncHandler(async (req, res) => {
 
 export const leaveWorkspace = asyncHandler(async (req, res) => {
     const { workspaceId } = req.params;
+    const userId = req.user._id;
 
     const membership = await WorkspaceMember.findOne({
         workspace: workspaceId,
-        user: req.user._id,
+        user: userId,
         status: "active",
     });
 
@@ -125,32 +128,70 @@ export const leaveWorkspace = asyncHandler(async (req, res) => {
         throw new ApiError(404, "You are not a member of this workspace");
     }
 
-    if (membership.role === "owner") {
+    if (membership.role === WorkspaceRolesEnum.OWNER) {
         throw new ApiError(
             400,
             "Workspace owner cannot leave directly. Transfer ownership first",
         );
     }
 
-    await WorkspaceMember.deleteOne({ _id: membership._id });
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    await createActivityLog({
-        workspace: workspaceId,
-        actor: req.user._id,
-        entityType: "member",
-        action: "workspace_left",
-        message: `${req.user.email} left the workspace`,
-        meta: {
-            userId: req.user._id,
-            previousRole: membership.role,
-        },
-    });
+    try {
+        await WorkspaceMember.deleteOne({ _id: membership._id }, { session });
 
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, null, "You left the workspace successfully"),
+        await ProjectMember.deleteMany(
+            {
+                workspace: workspaceId,
+                user: userId,
+            },
+            { session },
         );
+
+        await Tasks.updateMany(
+            {
+                workspace: workspaceId,
+                assignedTo: userId,
+            },
+            {
+                $set: {
+                    assignedTo: null,
+                    assignedBy: null,
+                },
+            },
+            { session },
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        await createActivityLog({
+            workspace: workspaceId,
+            actor: userId,
+            entityType: "member",
+            action: "workspace_left",
+            message: `${req.user.email} left the workspace`,
+            meta: {
+                userId,
+                previousRole: membership.role,
+            },
+        });
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    null,
+                    "You left the workspace successfully",
+                ),
+            );
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
 });
 
 export const transferWorkspaceOwnership = asyncHandler(async (req, res) => {
