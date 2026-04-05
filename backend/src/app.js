@@ -7,6 +7,7 @@ import { mongoSanitizeMiddleware } from "./middlewares/mongoSanitize.middleware.
 import hpp from "hpp";
 
 const app = express();
+const isProduction = process.env.NODE_ENV === "production";
 
 app.use(helmet());
 
@@ -21,9 +22,9 @@ app.use(hpp());
 //cors configuration
 app.use(
     cors({
-        origin: process.env.CORS_ORIGIN?.split(",") || [
-            "http://localhost:3000",
-        ],
+        origin: process.env.CORS_ORIGIN?.split(",")
+            .map((origin) => origin.trim())
+            .filter(Boolean) || ["http://localhost:3000"],
         credentials: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
@@ -32,17 +33,34 @@ app.use(
 
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 300,
+    max: 2000,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => !isProduction || req.path.startsWith("/api/v1/healthcheck"),
+    handler: (req, res) => {
+        res.status(429).json({
+            statusCode: 429,
+            success: false,
+            message: "Too many requests. Please try again later.",
+        });
+    },
 });
 app.use(globalLimiter);
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 20,
+    max: 60,
     standardHeaders: true,
     legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    skip: () => !isProduction,
+    handler: (req, res) => {
+        res.status(429).json({
+            statusCode: 429,
+            success: false,
+            message: "Too many auth requests. Please try again later.",
+        });
+    },
 });
 app.use("/api/v1/auth", authLimiter);
 
@@ -59,6 +77,7 @@ import projectInviteRoutes from "./routes/projectInvite.routes.js";
 import activityRoutes from "./routes/activity.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import searchRoutes from "./routes/search.routes.js";
+import assistantRoutes from "./routes/assistant.routes.js";
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
@@ -74,6 +93,7 @@ app.use("/api/v1", projectInviteRoutes);
 app.use("/api/v1", activityRoutes);
 app.use("/api/v1", notificationRoutes);
 app.use("/api/v1/search", searchRoutes);
+app.use("/api/v1/assistant", assistantRoutes);
 
 app.get("/", (req, res) => {
     res.send("Welcome to TeamForge API");

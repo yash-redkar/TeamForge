@@ -11,7 +11,12 @@ import {
 import { getWorkspaceTasks } from "../controllers/task.controllers.js";
 import workspaceMemberRouter from "./workspaceMember.routes.js";
 import workspaceProjectRouter from "./workspaceProject.routes.js";
-import { getWorkspaceBillingSummary } from "../controllers/billing.controllers.js";
+import {
+    getWorkspaceBillingSummary,
+    createWorkspaceBillingOrder,
+    verifyWorkspaceBillingPayment,
+    updateWorkspaceBillingPlan,
+} from "../controllers/billing.controllers.js";
 
 const router = Router();
 
@@ -28,6 +33,9 @@ router.patch("/:workspaceId/transfer-ownership", transferWorkspaceOwnership);
 
 router.get("/:workspaceId/tasks", getWorkspaceTasks);
 router.get("/:workspaceId/billing-summary", getWorkspaceBillingSummary);
+router.post("/:workspaceId/billing/order", createWorkspaceBillingOrder);
+router.post("/:workspaceId/billing/verify", verifyWorkspaceBillingPayment);
+router.put("/:workspaceId/billing/plan", updateWorkspaceBillingPlan);
 
 router.use("/:workspaceId/members", workspaceMemberRouter);
 router.use("/:workspaceId/projects", workspaceProjectRouter);

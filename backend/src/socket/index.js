@@ -63,6 +63,24 @@ const ensureTaskAccess = async ({ userId, workspaceId, projectId, taskId }) => {
     return true;
 };
 
+const ensureDirectConversationAccess = async ({ userId, conversation }) => {
+    const participantIds = Array.isArray(conversation.participants)
+        ? conversation.participants.map((item) => String(item))
+        : [];
+
+    if (!participantIds.includes(String(userId))) {
+        throw new Error("You do not have access to this direct chat");
+    }
+
+    await ensureProjectAccess({
+        userId,
+        workspaceId: conversation.workspace,
+        projectId: conversation.project,
+    });
+
+    return true;
+};
+
 const getUserFromSocket = async (socket) => {
     const authToken = socket.handshake.auth?.token;
     if (!authToken) return null;
@@ -187,6 +205,11 @@ export const initSocket = (httpServer) => {
                         projectId: convo.project,
                         taskId: convo.task,
                     });
+                } else if (convo.type === "direct") {
+                    await ensureDirectConversationAccess({
+                        userId: socket.user._id,
+                        conversation: convo,
+                    });
                 } else {
                     return socket.emit("error_event", {
                         message: "Unsupported conversation type",
@@ -237,6 +260,11 @@ export const initSocket = (httpServer) => {
                         projectId: convo.project,
                         taskId: convo.task,
                     });
+                } else if (convo.type === "direct") {
+                    await ensureDirectConversationAccess({
+                        userId: socket.user._id,
+                        conversation: convo,
+                    });
                 } else {
                     return socket.emit("error_event", {
                         message: "Unsupported conversation type",
@@ -265,9 +293,30 @@ export const initSocket = (httpServer) => {
                     .populate("sender", "username email avatar fullname name")
                     .lean();
 
-                ioInstance
-                    .to(`conversation:${convo._id}`)
-                    .emit("message_created", populated);
+                const outboundMessage = {
+                    ...populated,
+                    conversation: String(convo._id),
+                    conversationId: String(convo._id),
+                    conversationType: String(convo.type || ""),
+                    workspaceId: convo.workspace ? String(convo.workspace) : "",
+                    projectId: convo.project ? String(convo.project) : "",
+                };
+
+                if (convo.type === "direct") {
+                    const participants = Array.isArray(convo.participants)
+                        ? convo.participants.map((item) => String(item))
+                        : [];
+
+                    participants.forEach((participantId) => {
+                        ioInstance
+                            .to(participantId)
+                            .emit("message_created", outboundMessage);
+                    });
+                } else {
+                    ioInstance
+                        .to(`conversation:${convo._id}`)
+                        .emit("message_created", outboundMessage);
+                }
             } catch (e) {
                 socket.emit("error_event", {
                     message: e.message || "Send failed",
@@ -301,6 +350,11 @@ export const initSocket = (httpServer) => {
                         workspaceId: convo.workspace,
                         projectId: convo.project,
                         taskId: convo.task,
+                    });
+                } else if (convo.type === "direct") {
+                    await ensureDirectConversationAccess({
+                        userId: socket.user._id,
+                        conversation: convo,
                     });
                 } else {
                     return;
@@ -346,6 +400,11 @@ export const initSocket = (httpServer) => {
                         workspaceId: convo.workspace,
                         projectId: convo.project,
                         taskId: convo.task,
+                    });
+                } else if (convo.type === "direct") {
+                    await ensureDirectConversationAccess({
+                        userId: socket.user._id,
+                        conversation: convo,
                     });
                 } else {
                     return;

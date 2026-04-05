@@ -9,6 +9,7 @@ It provides a modern workspace experience with projects, tasks, subtasks, chat, 
 ## ✨ Features
 
 ### Core Features
+
 - Multi-workspace collaboration
 - Project creation and management
 - Task and subtask management
@@ -20,8 +21,12 @@ It provides a modern workspace experience with projects, tasks, subtasks, chat, 
 - Notification system
 - Global search
 - Realtime chat and updates
+- Direct member-to-member project chat
+- Billing and subscription flow
+- AI assistant for workspace guidance
 
 ### UI / Product Features
+
 - Landing page
 - Login and signup flow
 - Protected dashboard
@@ -42,6 +47,7 @@ It provides a modern workspace experience with projects, tasks, subtasks, chat, 
 ## 🧠 Tech Stack
 
 ### Frontend
+
 - Next.js
 - TypeScript
 - Tailwind CSS
@@ -53,6 +59,7 @@ It provides a modern workspace experience with projects, tasks, subtasks, chat, 
 - Socket.IO Client
 
 ### Backend
+
 - Node.js
 - Express.js
 - MongoDB
@@ -62,6 +69,7 @@ It provides a modern workspace experience with projects, tasks, subtasks, chat, 
 - Cloudinary
 - Multer
 - Nodemailer / Mailgen
+- Razorpay
 
 ---
 
@@ -89,7 +97,7 @@ Task
  ↓
 Subtask
  ↓
-Comments / Attachments / Notifications / Activity / Chat 
+Comments / Attachments / Notifications / Activity / Chat
 
 ```
 
@@ -103,6 +111,9 @@ Comments / Attachments / Notifications / Activity / Chat
 - Rate limiting and security middleware
 - Modular route/controller structure
 - Realtime events with Socket.IO
+- Direct project chat with member access control
+- Billing order creation and payment verification
+- AI assistant endpoint for workspace guidance
 - Activity log and notification architecture
 - File upload and Cloudinary integration
 
@@ -139,9 +150,12 @@ Comments / Attachments / Notifications / Activity / Chat
 - Activity tracking
 - Workspace chat
 - Project chat
+- Direct project chat
 - Search / command palette
 - Kanban board
 - Calendar page core view
+- Billing / subscription flow
+- AI assistant integration
 
 ---
 
@@ -159,8 +173,6 @@ Comments / Attachments / Notifications / Activity / Chat
 
 ## 📌 Planned Features
 
-- AI Assistant
-- Billing / subscription flow
 - Appearance mode switching (light / dark theme options)
 - Deployment and production polish
 - Testing
@@ -170,14 +182,23 @@ Comments / Attachments / Notifications / Activity / Chat
 ## 🖼️ Screenshots
 
 Dashboard
+
 <!-- Add dashboard screenshot -->
+
 Command Palette / Search
+
 <!-- Add command palette screenshot -->
+
 Task Details
+
 <!-- Add task details screenshot -->
+
 Kanban Board
+
 <!-- Add kanban board screenshot -->
+
 Calendar View
+
 <!-- Add calendar screenshot -->
 
 ---
@@ -189,8 +210,6 @@ Calendar View
 - CI/CD pipeline
 - Unit and integration testing
 - Advanced analytics
-- Billing and subscriptions
-- AI-powered assistance
 - Theme customization
 - Advanced filtering and sorting
 

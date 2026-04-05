@@ -11,7 +11,7 @@ const conversationSchema = new mongoose.Schema(
 
         type: {
             type: String,
-            enum: ["project", "workspace", "task"],
+            enum: ["project", "workspace", "task", "direct"],
             required: true,
             index: true,
         },
@@ -28,6 +28,23 @@ const conversationSchema = new mongoose.Schema(
         task: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Tasks",
+            default: null,
+            index: true,
+        },
+
+        // For direct member-to-member chat inside a project
+        participants: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+                index: true,
+            },
+        ],
+
+        // Sorted user-id key for unique direct conversations
+        directKey: {
+            type: String,
+            trim: true,
             default: null,
             index: true,
         },
@@ -61,8 +78,14 @@ conversationSchema.index(
 
 // Ensure ONLY ONE task thread per task per workspace
 conversationSchema.index(
-  { workspace: 1, type: 1, task: 1 },
-  { unique: true, partialFilterExpression: { type: "task" } }
+    { workspace: 1, type: 1, task: 1 },
+    { unique: true, partialFilterExpression: { type: "task" } },
+);
+
+// Ensure ONLY ONE direct chat per user pair in a project/workspace
+conversationSchema.index(
+    { workspace: 1, project: 1, type: 1, directKey: 1 },
+    { unique: true, partialFilterExpression: { type: "direct" } },
 );
 
 conversationSchema.index({ workspace: 1, updatedAt: -1 });

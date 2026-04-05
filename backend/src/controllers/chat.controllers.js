@@ -68,6 +68,169 @@ const ensureTaskAccess = async ({ userId, workspaceId, projectId, taskId }) => {
     return task;
 };
 
+const ensureDirectConversationAccess = async ({ userId, conversation }) => {
+    const participantIds = Array.isArray(conversation.participants)
+        ? conversation.participants.map((item) => String(item))
+        : [];
+
+    if (!participantIds.includes(String(userId))) {
+        throw new ApiError(403, "You do not have access to this direct chat");
+    }
+
+    if (!conversation.project || !conversation.workspace) {
+        throw new ApiError(400, "Invalid direct conversation");
+    }
+
+    await ensureProjectAccess({
+        userId,
+        workspaceId: conversation.workspace,
+        projectId: conversation.project,
+    });
+};
+
+const getDirectConversationKey = (userA, userB) => {
+    return [String(userA), String(userB)].sort().join(":");
+};
+
+// 1b) List direct conversations in a project for current user
+export const listProjectDirectConversations = asyncHandler(async (req, res) => {
+    const { workspaceId, projectId } = req.params;
+
+    if (
+        !mongoose.isValidObjectId(workspaceId) ||
+        !mongoose.isValidObjectId(projectId)
+    ) {
+        throw new ApiError(400, "Invalid workspaceId or projectId");
+    }
+
+    await ensureProjectAccess({
+        userId: req.user._id,
+        workspaceId,
+        projectId,
+    });
+
+    const conversations = await Conversation.find({
+        workspace: workspaceId,
+        project: projectId,
+        type: "direct",
+        participants: req.user._id,
+    })
+        .sort({ updatedAt: -1 })
+        .populate("participants", "_id fullname name username email avatar")
+        .lean();
+
+    const conversationIds = conversations.map((item) => item._id);
+
+    const lastMessages = await Message.aggregate([
+        {
+            $match: {
+                conversation: { $in: conversationIds },
+                deletedAt: null,
+            },
+        },
+        { $sort: { createdAt: -1 } },
+        {
+            $group: {
+                _id: "$conversation",
+                message: { $first: "$$ROOT" },
+            },
+        },
+    ]);
+
+    const lastMessageMap = new Map(
+        lastMessages.map((item) => [String(item._id), item.message]),
+    );
+
+    const data = conversations.map((conversation) => ({
+        ...conversation,
+        lastMessage: lastMessageMap.get(String(conversation._id)) || null,
+    }));
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, data, "Direct conversations fetched"));
+});
+
+// 1c) Get or create direct conversation with one project member
+export const getOrCreateProjectDirectConversation = asyncHandler(
+    async (req, res) => {
+        const { workspaceId, projectId, memberId } = req.params;
+
+        if (
+            !mongoose.isValidObjectId(workspaceId) ||
+            !mongoose.isValidObjectId(projectId) ||
+            !mongoose.isValidObjectId(memberId)
+        ) {
+            throw new ApiError(
+                400,
+                "Invalid workspaceId, projectId, or memberId",
+            );
+        }
+
+        await ensureProjectAccess({
+            userId: req.user._id,
+            workspaceId,
+            projectId,
+        });
+
+        if (String(req.user._id) === String(memberId)) {
+            throw new ApiError(
+                400,
+                "You cannot create a direct chat with yourself",
+            );
+        }
+
+        const targetMembership = await ProjectMember.findOne({
+            workspace: workspaceId,
+            project: projectId,
+            user: memberId,
+            status: "active",
+        });
+
+        if (!targetMembership) {
+            throw new ApiError(
+                404,
+                "Target member is not active in this project",
+            );
+        }
+
+        const directKey = getDirectConversationKey(req.user._id, memberId);
+
+        let conversation = await Conversation.findOne({
+            workspace: workspaceId,
+            project: projectId,
+            type: "direct",
+            directKey,
+        }).populate("participants", "_id fullname name username email avatar");
+
+        if (!conversation) {
+            conversation = await Conversation.create({
+                workspace: workspaceId,
+                project: projectId,
+                type: "direct",
+                name: null,
+                createdBy: req.user._id,
+                participants: [req.user._id, memberId],
+                directKey,
+                task: null,
+            });
+
+            conversation = await Conversation.findById(
+                conversation._id,
+            ).populate(
+                "participants",
+                "_id fullname name username email avatar",
+            );
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, conversation, "Direct conversation ready"),
+            );
+    },
+);
+
 // 1) Get or Create Project Chat Conversation
 export const getOrCreateProjectConversation = asyncHandler(async (req, res) => {
     const { workspaceId, projectId } = req.params;
@@ -141,6 +304,11 @@ export const getConversationMessages = asyncHandler(async (req, res) => {
             projectId: convo.project,
             taskId: convo.task,
         });
+    } else if (String(convo.type) === "direct") {
+        await ensureDirectConversationAccess({
+            userId: req.user._id,
+            conversation: convo,
+        });
     } else {
         throw new ApiError(400, "Unsupported conversation type");
     }
@@ -213,6 +381,11 @@ export const sendMessage = asyncHandler(async (req, res) => {
             workspaceId: convo.workspace,
             projectId: convo.project,
             taskId: convo.task,
+        });
+    } else if (String(convo.type) === "direct") {
+        await ensureDirectConversationAccess({
+            userId: req.user._id,
+            conversation: convo,
         });
     } else {
         throw new ApiError(400, "Unsupported conversation type");

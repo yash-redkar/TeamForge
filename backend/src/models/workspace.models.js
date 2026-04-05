@@ -24,17 +24,11 @@ const workspaceSchema = new Schema(
             enum: ["free", "pro", "business"],
             default: "free",
         },
-
-        billingCustomerId: { type: String, default: "" },
-        subscriptionId: { type: String, default: "" },
     },
     { timestamps: true },
 );
 
-workspaceSchema.index(
-    { slug: 1 },
-    { unique: true }
-); 
+workspaceSchema.index({ slug: 1 }, { unique: true });
 workspaceSchema.index({ name: 1 });
 workspaceSchema.index({ createdBy: 1, createdAt: -1 });
 

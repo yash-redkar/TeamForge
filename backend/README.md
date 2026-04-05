@@ -3,6 +3,7 @@
 Backend API for **TeamForge**, a full-stack SaaS project management platform.
 
 This backend powers authentication, workspaces, projects, tasks, subtasks, comments, attachments, invitations, notifications, activity logs, search, and realtime collaboration features.
+It also includes billing, an AI assistant endpoint, and direct member-to-member project chat.
 
 ---
 
@@ -18,6 +19,7 @@ This backend powers authentication, workspaces, projects, tasks, subtasks, comme
 - Multer
 - Nodemailer
 - Mailgen
+- Razorpay
 
 ---
 
@@ -35,6 +37,9 @@ This backend powers authentication, workspaces, projects, tasks, subtasks, comme
 - Activity logs
 - Global search
 - Realtime chat and events
+- Direct project chat
+- Billing and subscription flow
+- AI assistant support
 
 ---
 
@@ -95,15 +100,19 @@ Create a .env file in the backend folder based on .env.example.
 - Chat
 
 ## API Notes
+
 - All main routes are versioned under `/api/v1`
 - JWT-based protected routes use authorization middleware
 - File uploads support task attachments through Multer + Cloudinary
 - Realtime updates are emitted through Socket.IO events
 - Activity logs and notifications are created for major collaboration actions
+- Billing flows use Razorpay order creation and verification
+- AI assistant queries are served from a protected API route
 
 ## Current Status
 
 ### Completed
+
 - Auth system
 - Workspace module
 - Project module
@@ -115,16 +124,16 @@ Create a .env file in the backend folder based on .env.example.
 - Activity logs
 - Search
 - Chat
+- Direct chat
+- Billing flow
+- AI assistant
 - Invitation flows
 
 ### In Progress
+
 - Refactoring and cleanup
 - Deployment readiness
 - Testing support
-
-### Planned
-- Billing support
-- AI Assistant integration
 - Additional production improvements
 
 ## Author
