@@ -19,6 +19,24 @@ const getFrontendBaseUrl = () => {
     return process.env.FRONTEND_URL || "http://localhost:3000";
 };
 
+const getBackendBaseUrl = (req) => {
+    const configuredBaseUrl =
+        process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL;
+
+    if (configuredBaseUrl) {
+        return configuredBaseUrl.replace(/\/+$/, "");
+    }
+
+    return `${req.protocol}://${req.get("host")}`;
+};
+
+const getGoogleRedirectUri = (req) => {
+    return (
+        process.env.GOOGLE_OAUTH_REDIRECT_URI ||
+        `${getBackendBaseUrl(req)}/api/v1/auth/google/callback`
+    );
+};
+
 const getFirstQueryValue = (value) => {
     if (Array.isArray(value)) return value[0];
     return value;
@@ -218,9 +236,7 @@ const login = asyncHandler(async (req, res) => {
 
 const googleLogin = asyncHandler(async (req, res) => {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri =
-        process.env.GOOGLE_OAUTH_REDIRECT_URI ||
-        "http://localhost:8000/api/v1/auth/google/callback";
+    const redirectUri = getGoogleRedirectUri(req);
     const nextPath = getSafeNextPath(req.query?.next);
 
     if (!clientId) {
@@ -242,9 +258,7 @@ const googleLogin = asyncHandler(async (req, res) => {
 const googleLoginCallback = asyncHandler(async (req, res) => {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri =
-        process.env.GOOGLE_OAUTH_REDIRECT_URI ||
-        "http://localhost:8000/api/v1/auth/google/callback";
+    const redirectUri = getGoogleRedirectUri(req);
 
     if (!clientId || !clientSecret) {
         throw new ApiError(500, "Google login is not configured");

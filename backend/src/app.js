@@ -9,6 +9,9 @@ import hpp from "hpp";
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
 
+// Required behind reverse proxies (Render, Vercel, etc.) so req.protocol is accurate.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 
 // body limits
