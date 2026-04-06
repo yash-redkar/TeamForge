@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AuthInput } from "@/components/auth/auth-input";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { buildApiUrl } from "@/lib/api-url";
 import { parseApiResponse } from "@/lib/response";
 
 export default function ResetPasswordPage() {
@@ -30,17 +31,14 @@ export default function ResetPasswordPage() {
     try {
       setIsLoading(true);
 
-      const res = await fetch(
-        `http://localhost:8000/api/v1/auth/reset-password/${token}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ newPassword: password }),
-          credentials: "include",
+      const res = await fetch(buildApiUrl(`/auth/reset-password/${token}`), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({ newPassword: password }),
+        credentials: "include",
+      });
 
       const data = await parseApiResponse(res);
       console.log("Reset password response:", data);

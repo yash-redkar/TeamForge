@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useState } from "react";
 import { AuthInput } from "@/components/auth/auth-input";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { buildApiUrl } from "@/lib/api-url";
 import { parseApiResponse } from "@/lib/response";
 
 export default function RegisterPage() {
@@ -28,7 +29,7 @@ export default function RegisterPage() {
     try {
       setIsLoading(true);
 
-      const res = await fetch("http://localhost:8000/api/v1/auth/register", {
+      const res = await fetch(buildApiUrl("/auth/register"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

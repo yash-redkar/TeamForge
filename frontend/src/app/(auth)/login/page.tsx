@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useState } from "react";
 import { AuthInput } from "@/components/auth/auth-input";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { buildApiUrl } from "@/lib/api-url";
 import { parseApiResponse } from "@/lib/response";
 import { useClientSearchParams } from "@/lib/use-client-search-params";
 
@@ -25,7 +26,7 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
 
-      const res = await fetch("http://localhost:8000/api/v1/auth/login", {
+      const res = await fetch(buildApiUrl("/auth/login"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -61,7 +62,7 @@ export default function LoginPage() {
 
     setIsGoogleLoading(true);
 
-    const googleLoginUrl = new URL("http://localhost:8000/api/v1/auth/google");
+    const googleLoginUrl = new URL(buildApiUrl("/auth/google"));
     googleLoginUrl.searchParams.set("next", nextUrl);
 
     window.location.href = googleLoginUrl.toString();

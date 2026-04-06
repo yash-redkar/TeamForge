@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useState } from "react";
 import { AuthInput } from "@/components/auth/auth-input";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { buildApiUrl } from "@/lib/api-url";
 import { parseApiResponse } from "@/lib/response";
 
 export default function ForgotPasswordPage() {
@@ -19,17 +20,14 @@ export default function ForgotPasswordPage() {
     try {
       setIsLoading(true);
 
-      const res = await fetch(
-        "http://localhost:8000/api/v1/auth/forgot-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-          credentials: "include",
+      const res = await fetch(buildApiUrl("/auth/forgot-password"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({ email }),
+        credentials: "include",
+      });
 
       const data = await parseApiResponse(res);
       console.log("Forgot password response:", data);
