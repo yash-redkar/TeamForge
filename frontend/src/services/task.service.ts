@@ -96,6 +96,13 @@ export const taskService = {
     return res.data;
   },
 
+  async deleteTask(workspaceId: string, projectId: string, taskId: string) {
+    const res = await apiClient.delete(
+      `/workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}`,
+    );
+    return res.data;
+  },
+
   async getSubTasks(workspaceId: string, projectId: string, taskId: string) {
     const res = await apiClient.get(
       `/workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}/subtasks`,

@@ -449,32 +449,32 @@ export default function ProjectDetailsPage() {
 
           <div className="shrink-0 self-start">
             <div className="flex flex-wrap items-center justify-end gap-3">
-            <Link
-              href={`/workspaces/${workspaceId}`}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm text-[var(--app-text)] transition hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800"
-            >
-              Back
-            </Link>
-
-            <Link
-              href={`/workspaces/${workspaceId}/projects/${projectId}/chat`}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow transition hover:opacity-90"
-            >
-              <MessageSquare className="size-4" />
-              Project Chat
-            </Link>
-
-            {isProjectAdmin ? (
-              <button
-                type="button"
-                onClick={handleDeleteProject}
-                disabled={isDeletingProject}
-                className="inline-flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              <Link
+                href={`/workspaces/${workspaceId}`}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm text-[var(--app-text)] transition hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800"
               >
-                <Trash2 className="size-4" />
-                {isDeletingProject ? "Deleting..." : "Delete Project"}
-              </button>
-            ) : null}
+                Back
+              </Link>
+
+              <Link
+                href={`/workspaces/${workspaceId}/projects/${projectId}/chat`}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow transition hover:opacity-90"
+              >
+                <MessageSquare className="size-4" />
+                Project Chat
+              </Link>
+
+              {isProjectAdmin ? (
+                <button
+                  type="button"
+                  onClick={handleDeleteProject}
+                  disabled={isDeletingProject}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-[var(--app-surface)] px-4 py-2 text-sm font-medium text-[var(--app-text)] transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:hover:text-red-300"
+                >
+                  <Trash2 className="size-4" />
+                  {isDeletingProject ? "Deleting..." : "Delete Project"}
+                </button>
+              ) : null}
             </div>
           </div>
         </div>

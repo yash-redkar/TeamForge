@@ -9,9 +9,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { Trash2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { taskService } from "@/services/task.service";
 import { taskCommentService } from "@/services/task-comment.service";
@@ -22,6 +23,7 @@ import { useClientSearchParams } from "@/lib/use-client-search-params";
 
 export default function TaskDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const searchParams = useClientSearchParams();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -67,6 +69,7 @@ export default function TaskDetailsPage() {
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
     null,
   );
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
 
   const [error, setError] = useState("");
   const [statusValue, setStatusValue] = useState("todo");
@@ -857,6 +860,48 @@ export default function TaskDetailsPage() {
     });
   }, [members]);
 
+  const currentUserId = currentUser?._id || currentUser?.id || "";
+  const currentMembership = members.find((item: any) => {
+    const user = getMemberUser(item);
+    const memberId = user?._id || user?.id || "";
+    return Boolean(currentUserId && memberId && memberId === currentUserId);
+  });
+  const isProjectAdmin = (currentMembership?.role || "") === "admin";
+
+  const handleDeleteTask = async () => {
+    if (
+      !isProjectAdmin ||
+      isDeletingTask ||
+      !workspaceId ||
+      !projectId ||
+      !taskId
+    ) {
+      return;
+    }
+
+    const shouldDelete = window.confirm(
+      "Delete this task? This action cannot be undone.",
+    );
+
+    if (!shouldDelete) return;
+
+    try {
+      setIsDeletingTask(true);
+      await taskService.deleteTask(workspaceId, projectId, taskId);
+      toast.success("Task deleted successfully");
+      router.push(`/workspaces/${workspaceId}/projects/${projectId}`);
+    } catch (err: any) {
+      console.error("Delete task error:", err?.response?.data || err);
+      const message =
+        err?.response?.data?.errors?.[0]?.msg ||
+        err?.response?.data?.message ||
+        "Failed to delete task";
+      toast.error(message);
+    } finally {
+      setIsDeletingTask(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4 text-white">
@@ -922,6 +967,18 @@ export default function TaskDetailsPage() {
             >
               Back to Project
             </Link>
+
+            {isProjectAdmin ? (
+              <button
+                type="button"
+                onClick={handleDeleteTask}
+                disabled={isDeletingTask}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:text-red-300"
+              >
+                <Trash2 className="size-4" />
+                {isDeletingTask ? "Deleting..." : "Delete Task"}
+              </button>
+            ) : null}
           </div>
         </div>
 
