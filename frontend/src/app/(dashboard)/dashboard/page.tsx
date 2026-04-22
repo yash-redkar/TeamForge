@@ -558,7 +558,7 @@ export default function DashboardPage() {
                             </span>
                           </div>
 
-                          <p className="mt-2 truncate text-sm text-[var(--app-muted)]">
+                          <p className="mt-2 overflow-hidden text-sm text-[var(--app-muted)] break-words [overflow-wrap:anywhere] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
                             {project.description || "No description provided"}
                           </p>
 

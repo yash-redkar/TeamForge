@@ -12,41 +12,59 @@ It provides a modern workspace experience with projects, tasks, subtasks, chat, 
 
 ---
 
-## ✨ Features
+## 🖼️ Product Preview
 
-### Core Features
+### Dashboard
+<!-- Add screenshot -->
 
-- Multi-workspace collaboration
-- Project creation and management
-- Task and subtask management
-- Task assignment and status workflow
+### Kanban Board
+<!-- Add screenshot -->
+
+### Task Details
+<!-- Add screenshot -->
+
+### Calendar View
+<!-- Add screenshot -->
+
+---
+
+## 🎯 Why TeamForge?
+
+Most teams use multiple tools like Notion, Slack, Trello, and Google Drive separately.
+
+**TeamForge solves this by combining everything into one platform:**
+
+- Project & Task Management
+- Real-time Collaboration
+- Chat + Notifications System
+- Calendar + Kanban Views
+- AI-powered Workspace Assistant
+- Full SaaS-style billing system
+
+---
+
+## 💡 What Makes This Project Unique?
+
+- 🔥 All-in-one SaaS productivity platform
+- ⚡ Real-time collaboration system (chat + updates)
+- 🤖 AI assistant inside workspace workflow
+- 💳 Complete subscription & billing system
+- 📧 Real production email system using Brevo
+- 🏗️ Modular full-stack architecture (scalable design)
+
+---
+
+## ✨ Key Features
+
+- Multi-workspace project management system
+- Task & subtask workflow with assignments
+- Real-time chat (workspace + project level)
+- Notifications, activity logs & audit      tracking
+- Kanban board + calendar view
 - Role-based access control
-- Workspace and project invitations
-- Comments and attachments on tasks
-- Activity logs and audit trail
-- Notification system
-- Global search
-- Realtime chat and updates
-- Direct member-to-member project chat
-- Billing and subscription flow
+- Global search + command palette
 - AI assistant for workspace guidance
-
-### UI / Product Features
-
-- Landing page
-- Login and signup flow
-- Protected dashboard
-- Modern SaaS-style layout
-- Sidebar navigation
-- Search / command palette
-- Workspace members management
-- Project members management
-- Task details page
-- Kanban board
-- Notifications page
-- Activity page
-- Separate workspace and project chat
-- Calendar task view
+- Billing & subscription system (Razorpay)
 
 ---
 
@@ -106,96 +124,27 @@ Subtask
 Comments / Attachments / Notifications / Activity / Chat
 
 ```
-
 ## 🔐 Backend Highlights
 
-- JWT-based authentication
-- Refresh token rotation
-- Email verification
-- Forgot password / reset password flow
-- Role-based access control
-- Rate limiting and security middleware
-- Modular route/controller structure
-- Realtime events with Socket.IO
-- Direct project chat with member access control
-- Billing order creation and payment verification
-- AI assistant endpoint for workspace guidance
-- Activity log and notification architecture
-- File upload and Cloudinary integration
+- Secure JWT authentication with refresh tokens
+- Real-time communication using Socket.IO
+- Email verification & password recovery system
+- Role-based access control for workspaces/projects
+- Payment integration using Razorpay
+- File uploads using Cloudinary
+- AI assistant API integration
+- Activity tracking & notification system
 
 ---
 
 ## 🎨 Frontend Highlights
 
 - Modern SaaS dashboard UI
-- Nested workspace / project structure
-- Reusable components and services
-- Protected routes and auth-aware flows
-- Kanban-style task workflow
-- Calendar-based task overview
-- Workspace and project chat interfaces
-- Notifications and activity pages
-- Search / command style navigation
-
----
-
-## ✅ Completed Features
-
-- Landing page
-- Login / signup flow
-- Dashboard
-- Workspace creation
-- Workspace invitations
-- Project creation
-- Project invitations
-- Task creation and task details page
-- Subtasks
-- Attachments
-- Comments
-- Notifications
-- Activity tracking
-- Workspace chat
-- Project chat
-- Direct project chat
-- Search / command palette
-- Kanban board
-- Calendar page core view
-- Billing / subscription flow
-- AI assistant integration
-- Dashboard polish
-- Settings page polish
-- Calendar experience refinement
-- Search UX refinement
-- Notification and activity UI polish
-- Mobile responsiveness improvements
-- Overall UI consistency
-- Appearance mode switching (light / dark theme options)
-- Deployment and production polish
-- Testing
-
----
-
-## 🖼️ Screenshots
-
-Dashboard
-
-<!-- Add dashboard screenshot -->
-
-Command Palette / Search
-
-<!-- Add command palette screenshot -->
-
-Task Details
-
-<!-- Add task details screenshot -->
-
-Kanban Board
-
-<!-- Add kanban board screenshot -->
-
-Calendar View
-
-<!-- Add calendar screenshot -->
+- Kanban + calendar-based task views
+- Real-time chat interfaces
+- Protected routes with auth-aware navigation
+- Reusable and scalable component architecture
+- Search & command palette UX
 
 ---
 
@@ -214,3 +163,5 @@ Calendar View
 ## 👨‍💻 Author
 
 **Yash Redkar**
+📌 Built as a full-stack SaaS project showcasing real-world team collaboration, task management, and production-level system design.
+
