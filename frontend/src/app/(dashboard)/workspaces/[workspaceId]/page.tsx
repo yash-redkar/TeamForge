@@ -169,9 +169,11 @@ export default function WorkspaceDetailsPage() {
     <>
       <div className="space-y-6 text-[var(--app-text)]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-semibold">{workspace.name}</h1>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-start gap-3">
+              <h1 className="text-3xl font-semibold leading-tight wrap-anywhere">
+                {workspace.name}
+              </h1>
 
               <span className="rounded-full border border-slate-200 bg-[var(--app-surface-2)] px-2.5 py-1 text-xs text-[var(--app-text)] dark:border-slate-800">
                 {workspace.plan || "free"}
@@ -258,11 +260,11 @@ export default function WorkspaceDetailsPage() {
                         href={`/workspaces/${workspaceId}/projects/${project._id}`}
                         className="block rounded-xl border border-slate-200 bg-[var(--app-surface)] p-4 shadow-sm transition hover:border-slate-300 hover:bg-slate-100 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-900"
                       >
-                        <h4 className="text-sm font-semibold text-[var(--app-text)]">
+                        <h4 className="overflow-hidden text-sm font-semibold text-[var(--app-text)] wrap-anywhere [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                           {project.name || "Untitled Project"}
                         </h4>
 
-                        <p className="mt-1 text-xs text-[var(--app-muted)]">
+                        <p className="mt-1 overflow-hidden text-xs text-[var(--app-muted)] wrap-anywhere [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                           {project.description || "No description"}
                         </p>
                       </Link>

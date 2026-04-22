@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import {
@@ -10,7 +10,7 @@ import {
   Draggable,
   DropResult,
 } from "@hello-pangea/dnd";
-import { MessageSquare, ChevronDown } from "lucide-react";
+import { MessageSquare, ChevronDown, Trash2 } from "lucide-react";
 import { workspaceService } from "@/services/workspace.service";
 import { projectService } from "@/services/project.service";
 import { taskService } from "@/services/task.service";
@@ -21,6 +21,7 @@ import { InviteProjectMemberModal } from "@/components/project/invite-project-me
 
 export default function ProjectDetailsPage() {
   const params = useParams();
+  const router = useRouter();
 
   const workspaceId =
     typeof params.workspaceId === "string"
@@ -52,6 +53,7 @@ export default function ProjectDetailsPage() {
   const [isInviteProjectModalOpen, setIsInviteProjectModalOpen] =
     useState(false);
   const [isUpdatingTask, setIsUpdatingTask] = useState(false);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
 
   const normalizeStatus = (status: string) =>
     (status || "").toLowerCase().replace(/[_\s-]/g, "");
@@ -295,6 +297,30 @@ export default function ProjectDetailsPage() {
     }
   };
 
+  const handleDeleteProject = async () => {
+    if (!isProjectAdmin || isDeletingProject || !workspaceId || !projectId) {
+      return;
+    }
+
+    const shouldDelete = window.confirm(
+      "Delete this project? This action cannot be undone.",
+    );
+
+    if (!shouldDelete) return;
+
+    try {
+      setIsDeletingProject(true);
+      await projectService.deleteProject(workspaceId, projectId);
+      toast.success("Project deleted successfully");
+      router.push(`/workspaces/${workspaceId}/projects`);
+    } catch (err: any) {
+      console.error("Delete project failed:", err);
+      toast.error(err?.response?.data?.message || "Failed to delete project");
+    } finally {
+      setIsDeletingProject(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4 text-[var(--app-text)]">
@@ -402,12 +428,12 @@ export default function ProjectDetailsPage() {
     <>
       <div className="space-y-6 text-[var(--app-text)]">
         <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-start sm:justify-between dark:border-slate-800">
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-semibold text-[var(--app-text)]">
               {project.name || "Untitled Project"}
             </h1>
 
-            <p className="mt-2 text-sm text-[var(--app-muted)]">
+            <p className="mt-2 overflow-hidden text-sm text-[var(--app-muted)] wrap-anywhere [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
               {project.description ||
                 "Project details, tasks, members, and pending invites."}
             </p>
@@ -421,7 +447,8 @@ export default function ProjectDetailsPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="shrink-0 self-start">
+            <div className="flex flex-wrap items-center justify-end gap-3">
             <Link
               href={`/workspaces/${workspaceId}`}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm text-[var(--app-text)] transition hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800"
@@ -436,6 +463,19 @@ export default function ProjectDetailsPage() {
               <MessageSquare className="size-4" />
               Project Chat
             </Link>
+
+            {isProjectAdmin ? (
+              <button
+                type="button"
+                onClick={handleDeleteProject}
+                disabled={isDeletingProject}
+                className="inline-flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Trash2 className="size-4" />
+                {isDeletingProject ? "Deleting..." : "Delete Project"}
+              </button>
+            ) : null}
+            </div>
           </div>
         </div>
 

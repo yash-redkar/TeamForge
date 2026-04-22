@@ -343,7 +343,7 @@ export default function ProjectsPage() {
             }`}
           >
             <div className="min-w-0">
-              <h3 className="truncate text-base font-semibold text-[var(--app-text)] transition group-hover:text-cyan-600">
+              <h3 className="overflow-hidden text-base font-semibold text-[var(--app-text)] transition group-hover:text-cyan-600 wrap-anywhere [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                 {project?.name || "Untitled Project"}
               </h3>
 
@@ -388,8 +388,8 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-            <div className="mt-3 min-h-[56px]">
-              <p className="line-clamp-2 text-sm leading-6 text-[var(--app-muted)]">
+            <div className="mt-3 min-h-[96px]">
+              <p className="overflow-hidden text-sm leading-6 text-[var(--app-muted)] wrap-anywhere [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
                 {project?.description?.trim()
                   ? project.description
                   : "No description available."}
