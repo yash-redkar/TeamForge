@@ -16,7 +16,7 @@ export const authService = {
     return res.data;
   },
 
-  async updateAccount(payload: { fullName: string }) {
+  async updateAccount(payload: { fullName?: string; username?: string }) {
     const res = await apiClient.patch("/auth/update-account", payload);
     return res.data;
   },

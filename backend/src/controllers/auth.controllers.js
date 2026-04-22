@@ -79,8 +79,7 @@ const readGoogleState = (state) => {
 const generateUniqueUsername = async (baseUsername) => {
     const normalizedBase =
         baseUsername
-            .toLowerCase()
-            .replace(/[^a-z0-9_]/g, "")
+            .replace(/[^a-zA-Z0-9_]/g, "")
             .replace(/^_+|_+$/g, "")
             .slice(0, 20) || "user";
 
@@ -333,13 +332,13 @@ const googleLoginCallback = asyncHandler(async (req, res) => {
     }
 
     if (!user) {
-        const emailPrefix = profile.email.split("@")[0] || "user";
-        const username = await generateUniqueUsername(emailPrefix);
+        const fullName = profile.name || "User";
+        const username = await generateUniqueUsername(fullName);
 
         user = await User.create({
             email: profile.email,
             username,
-            fullName: profile.name || emailPrefix,
+            fullName,
             password: crypto.randomUUID(),
             authProvider: "google",
             googleId: googleId || undefined,
@@ -624,14 +623,45 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-    const { fullName } = req.body;
+    const { fullName, username } = req.body;
+
+    const updateData = {};
+
+    if (fullName) {
+        updateData.fullName = fullName.trim();
+    }
+
+    if (username) {
+        const normalizedUsername = username
+            .replace(/[^a-zA-Z0-9_]/g, "")
+            .replace(/^_+|_+$/g, "")
+            .slice(0, 30)
+            .trim();
+
+        if (!normalizedUsername) {
+            throw new ApiError(400, "Username must contain valid characters");
+        }
+
+        const existingUser = await User.findOne({
+            username: normalizedUsername,
+            _id: { $ne: req.user?._id },
+        });
+
+        if (existingUser) {
+            throw new ApiError(409, "Username already taken");
+        }
+
+        updateData.username = normalizedUsername;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+        throw new ApiError(400, "Nothing to update");
+    }
 
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
-            $set: {
-                fullName: fullName.trim(),
-            },
+            $set: updateData,
         },
         {
             new: true,

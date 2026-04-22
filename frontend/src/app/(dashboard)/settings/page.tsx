@@ -115,8 +115,7 @@ const settingsSections: {
 ];
 
 function getInitials(user?: CurrentUser | null) {
-  const value =
-    user?.fullName || user?.fullname || user?.username || "U";
+  const value = user?.fullName || user?.fullname || user?.username || "U";
   const parts = String(value).trim().split(" ").filter(Boolean);
 
   if (parts.length >= 2) {
@@ -609,10 +608,31 @@ export default function SettingsPage() {
       return;
     }
 
+    if (!profileForm.username || !profileForm.username.trim()) {
+      toast.error("Username is required");
+      return;
+    }
+
+    if (profileForm.username.length < 3) {
+      toast.error("Username must be at least 3 characters");
+      return;
+    }
+
+    const usernameRegex = /^[a-z0-9_]+$/i;
+    if (!usernameRegex.test(profileForm.username)) {
+      toast.error(
+        "Username can only contain letters, numbers, and underscores",
+      );
+      return;
+    }
+
     try {
       setIsSavingProfile(true);
 
-      const res = await authService.updateAccount({ fullName });
+      const res = await authService.updateAccount({
+        fullName,
+        username: profileForm.username,
+      });
 
       const updatedUser = res?.data as CurrentUser;
       setUser(updatedUser);
@@ -1754,8 +1774,14 @@ export default function SettingsPage() {
                   </label>
                   <input
                     value={profileForm.username}
-                    disabled
-                    className={inputClass(true)}
+                    onChange={(e) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        username: e.target.value,
+                      }))
+                    }
+                    className={inputClass()}
+                    placeholder="Enter username"
                   />
                 </div>
 
