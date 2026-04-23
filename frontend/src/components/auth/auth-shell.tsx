@@ -9,7 +9,7 @@ export function AuthShell({
 }) {
   return (
     <div
-      className="relative isolate min-h-screen text-white"
+      className="relative isolate min-h-dvh text-white"
       style={{
         backgroundColor:
           "color-mix(in srgb, var(--app-bg) 92%, rgb(56 189 248) 8%)",
@@ -22,7 +22,7 @@ export function AuthShell({
             "radial-gradient(circle at 8% 8%, rgba(56,189,248,0.22), transparent 32%), radial-gradient(circle at 92% 10%, rgba(59,130,246,0.18), transparent 28%), linear-gradient(to bottom, rgba(125,211,252,0.12), rgba(147,197,253,0.08))",
         }}
       />
-      <div className="grid min-h-screen lg:grid-cols-2">
+      <div className="grid min-h-dvh lg:grid-cols-2">
         <div
           className="hidden border-r lg:flex lg:flex-col lg:justify-between lg:p-10"
           style={{

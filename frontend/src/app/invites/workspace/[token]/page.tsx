@@ -56,7 +56,7 @@ export default function AcceptWorkspaceInvitePage() {
   }, [token, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-white">
+    <div className="flex min-h-dvh items-center justify-center bg-zinc-950 px-4 text-white">
       <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/70 p-8 text-center shadow-2xl">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-slate-800 bg-zinc-950">
           {status === "loading" && (

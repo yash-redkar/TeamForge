@@ -87,6 +87,13 @@
 
 html {
   background-color: var(--app-bg);
+  scrollbar-gutter: stable;
+}
+
+html[data-viewport-transition="true"],
+html[data-viewport-transition="true"] body {
+  scroll-behavior: auto !important;
+  overflow-anchor: none;
 }
 
 body {

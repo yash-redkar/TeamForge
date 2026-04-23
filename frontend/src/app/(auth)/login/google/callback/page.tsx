@@ -55,7 +55,7 @@ export default function GoogleLoginCallbackPage() {
   }, [router, searchParams]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
+    <main className="flex min-h-dvh items-center justify-center bg-slate-950 px-4 text-white">
       <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/90 p-8 text-center shadow-2xl">
         <p className="text-sm uppercase tracking-[0.3em] text-cyan-300">
           TeamForge

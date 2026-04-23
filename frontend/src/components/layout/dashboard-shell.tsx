@@ -38,7 +38,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]">
+    <div className="min-h-dvh bg-[var(--app-bg)] text-[var(--app-text)]">
       <AppSidebar
         className="fixed inset-y-0 left-0 z-30 hidden w-72 lg:flex"
         user={user}

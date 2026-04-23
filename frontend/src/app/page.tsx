@@ -65,7 +65,7 @@ export default function LandingPage() {
 
   return (
     <main
-      className="relative isolate min-h-screen text-white"
+      className="relative isolate min-h-dvh text-white"
       style={{
         backgroundColor:
           "color-mix(in srgb, var(--app-bg) 92%, rgb(56 189 248) 8%)",
@@ -139,7 +139,7 @@ export default function LandingPage() {
       </header>
 
       <section className="relative overflow-hidden border-b border-slate-800">
-        <div className="mx-auto max-w-7xl px-6 py-24">
+        <div className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-7xl items-center px-6 py-20">
           <div className="max-w-5xl">
             <h1 className="text-5xl font-semibold leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
               Manage Projects, Tasks & Teams
