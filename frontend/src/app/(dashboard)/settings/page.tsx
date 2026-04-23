@@ -1348,7 +1348,8 @@ export default function SettingsPage() {
     const memberCount = summary?.usage?.members ?? members.length;
 
     const maxProjects = summary?.limits?.maxProjects ?? 10;
-    const maxMembers = summary?.limits?.maxMembers ?? 5;
+    const maxMembers =
+      summary?.limits?.maxMembers ?? (workspacePlan === "free" ? 10 : 5);
 
     const projectUsagePercent =
       maxProjects > 0

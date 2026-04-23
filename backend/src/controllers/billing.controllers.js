@@ -9,12 +9,12 @@ import { WorkspaceRolesEnum } from "../utils/constants.js";
 
 const PLAN_PRICING = {
     free: 0,
-    pro: 500,
-    business: 1000,
+    pro: 19,
+    business: 49,
 };
 
 const PAID_PLANS = new Set(["pro", "business"]);
-const CURRENCY = "INR";
+const CURRENCY = "USD";
 
 function getRazorpayClient() {
     const keyId = process.env.RAZORPAY_KEY_ID;
